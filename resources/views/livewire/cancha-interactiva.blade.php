@@ -1,4 +1,4 @@
-<div class="relative w-full max-w-4xl p-4 mx-auto mt-6 bg-gray-100 rounded-lg shadow-lg">
+<div class="relative w-full h-96% max-w-4xl p-4 mx-auto mt-6 bg-gray-100 rounded-lg shadow-lg">
     <div class="relative inline-block">
         {{-- Imagen de la cancha --}}
         <img src="{{ asset('images/cancha.jpg') }}" alt="Cancha de vóley" class="block h-auto max-w-full" />
@@ -15,14 +15,11 @@
         <div class="absolute inset-0 z-10 grid grid-cols-6 grid-rows-3 pointer-events-none">
             @for ($fila = 0; $fila < 3; $fila++)
                 @for ($col = 0; $col < 6; $col++)
-                    <div class="relative border border-gray-300/40">
-                        {{-- <span class="absolute text-[10px] text-gray-400 top-0 left-0">{{ $fila+1 }},{{ $col+1 }}</span> --}}
-                    </div>
+                    <div class="relative border border-gray-300/40"></div>
                 @endfor
             @endfor
         </div>
 
-        {{-- Posiciones y cálculo de porcentaje por fila/columna --}}
         @php
             $posicionesLocal = [[3, 2], [3, 3], [2, 3], [1, 3], [1, 2], [2, 2]];
             $posicionesVisita = [[1, 5], [1, 4], [2, 4], [3, 4], [3, 5], [2, 5]];
@@ -31,7 +28,21 @@
             $columnas = 6;
             $filaAlto = 100 / $filas;
             $colAncho = 100 / $columnas;
+
+            $pelotaPosiciones = [
+                'local' => [3, 1],
+                'visita' => [1, 6],
+            ];
+            [$filaPelota, $colPelota] = $pelotaPosiciones[$saque];
+            $topPelota = $filaAlto * ($filaPelota - 0.5);
+            $leftPelota = $colAncho * ($colPelota - 0.5);
         @endphp
+
+        {{-- Mostrar pelota de saque --}}
+        <div class="absolute z-40 text-2xl"
+            style="top: {{ $topPelota }}%; left: {{ $leftPelota }}%; transform: translate(-50%, -50%);">
+            🏐
+        </div>
 
         {{-- Mostrar jugadores del equipo local --}}
         @foreach ($jugadoresLocalTitulares as $i => $jugador)
@@ -42,8 +53,10 @@
                     $left = $colAncho * ($col - 0.5);
                 }
             @endphp
-            <div class="absolute z-30 flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-blue-600 rounded-full"
-                style="top: {{ $top }}%; left: {{ $left }}%; transform: translate(-50%, -50%);">
+            <div class="absolute z-30 flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-blue-600 rounded-full cursor-pointer"
+                style="top: {{ $top }}%; left: {{ $left }}%; transform: translate(-50%, -50%);"
+                wire:click="$emit('abrirModalCambio', 'local')"
+                title="Jugador #{{ $jugador['numero'] }} - {{ $jugador['nombre'] }}">
                 {{ $jugador['numero'] }}
             </div>
         @endforeach
@@ -57,8 +70,10 @@
                     $left = $colAncho * ($col - 0.5);
                 }
             @endphp
-            <div class="absolute z-30 flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-red-600 rounded-full"
-                style="top: {{ $top }}%; left: {{ $left }}%; transform: translate(-50%, -50%);">
+            <div class="absolute z-30 flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-red-600 rounded-full cursor-pointer"
+                style="top: {{ $top }}%; left: {{ $left }}%; transform: translate(-50%, -50%);"
+                wire:click="$emit('abrirModalCambio', 'visita')"
+                title="Jugador #{{ $jugador['numero'] }} - {{ $jugador['nombre'] }}">
                 {{ $jugador['numero'] }}
             </div>
         @endforeach
@@ -67,7 +82,6 @@
         @if ($modoSeleccionTitulares)
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                 <div class="w-full max-w-3xl p-6 bg-white rounded shadow-lg">
-
                     <h2 class="mb-2 text-lg font-bold text-gray-800">Asignar Jugadores a Posiciones (Ⅰ a Ⅵ)</h2>
 
                     <div class="grid grid-cols-2 gap-6">
@@ -83,9 +97,8 @@
                                         <option value="">-- Seleccionar Jugador --</option>
                                         @foreach ($equipoLocal['jugadores'] as $index => $jugador)
                                             @if ($jugador['nombre'])
-                                                <option value="{{ $index }}">
-                                                    #{{ $jugador['numero'] }} - {{ $jugador['nombre'] }}
-                                                </option>
+                                                <option value="{{ $index }}">#{{ $jugador['numero'] }} -
+                                                    {{ $jugador['nombre'] }}</option>
                                             @endif
                                         @endforeach
                                     </select>
@@ -105,9 +118,8 @@
                                         <option value="">-- Seleccionar Jugador --</option>
                                         @foreach ($equipoVisita['jugadores'] as $index => $jugador)
                                             @if ($jugador['nombre'])
-                                                <option value="{{ $index }}">
-                                                    #{{ $jugador['numero'] }} - {{ $jugador['nombre'] }}
-                                                </option>
+                                                <option value="{{ $index }}">#{{ $jugador['numero'] }} -
+                                                    {{ $jugador['nombre'] }}</option>
                                             @endif
                                         @endforeach
                                     </select>
@@ -118,17 +130,73 @@
 
                     <div class="flex justify-end gap-3 mt-4 text-right">
                         <button wire:click="$set('modoSeleccionTitulares', false)"
-                            class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300">
-                            Cancelar
-                        </button>
+                            class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
                         <button wire:click="confirmarTitulares"
-                            class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700">
-                            Confirmar Titulares
-                        </button>
+                            class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700">Confirmar
+                            Titulares</button>
                     </div>
                 </div>
             </div>
         @endif
+
+        {{-- Modal para hacer cambio --}}
+        @if ($modalCambioVisible)
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+                <div class="w-full max-w-2xl p-6 bg-white rounded shadow-lg">
+                    <h2 class="mb-4 text-xl font-semibold text-gray-900">
+                        Cambio - Equipo {{ $equipoCambioActual === 'local' ? $equipoLocal['nombre'] : $equipoVisita['nombre'] }}
+                    </h2>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        {{-- Titulares --}}
+                        <div>
+                            <h3 class="mb-2 font-semibold text-gray-700">Titulares</h3>
+                            <select wire:model="jugadorASacarIndex" class="w-full p-2 border rounded" size="6">
+                                <option value="">-- Seleccionar jugador a sacar --</option>
+                                @php
+                                    $titulares = $equipoCambioActual === 'local' ? $jugadoresLocalTitulares : $jugadoresVisitaTitulares;
+                                @endphp
+                                @foreach ($titulares as $index => $titular)
+                                    <option value="{{ $index }}">
+                                        #{{ $titular['numero'] }} - {{ $titular['nombre'] }} ({{ $titular['posicion'] }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Suplentes --}}
+                        <div>
+                            <h3 class="mb-2 font-semibold text-gray-700">Suplentes</h3>
+                            <select wire:model="jugadorAEntrarIndex" class="w-full p-2 border rounded" size="6">
+                                <option value="">-- Seleccionar jugador a entrar --</option>
+                                @php
+                                    $suplentes = $equipoCambioActual === 'local' ? collect($equipoLocal['jugadores'])->except(collect($jugadoresLocalTitulares)->pluck('numero')->toArray())->values() : collect($equipoVisita['jugadores'])->except(collect($jugadoresVisitaTitulares)->pluck('numero')->toArray())->values();
+                                @endphp
+                                @foreach ($suplentes as $index => $suplente)
+                                    <option value="{{ $index }}">
+                                        #{{ $suplente['numero'] }} - {{ $suplente['nombre'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button wire:click="$set('modalCambioVisible', false)"
+                            class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancelar</button>
+                        <button wire:click="confirmarCambio"
+                            class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700">Confirmar Cambio</button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    {{-- Botón de prueba para cambiar el saque --}}
+    <div class="mt-4 text-center">
+        <button wire:click="cambiarSaque" class="px-4 py-2 text-white bg-yellow-500 rounded hover:bg-yellow-600">
+            Cambiar Saque (Ahora: {{ ucfirst($saque) }})
+        </button>
     </div>
 
     @push('scripts')
@@ -136,7 +204,6 @@
             Livewire.on('titulares-guardados', (datos) => {
                 localStorage.setItem('jugadoresLocalTitulares', JSON.stringify(datos.local));
                 localStorage.setItem('jugadoresVisitaTitulares', JSON.stringify(datos.visita));
-                console.log('Titulares guardados en localStorage', datos);
             });
 
             document.addEventListener('livewire:load', () => {
@@ -149,7 +216,6 @@
                             local: JSON.parse(local),
                             visita: JSON.parse(visita)
                         });
-                        console.log('Titulares cargados desde localStorage');
                     } catch (e) {
                         console.error('Error al parsear titulares desde localStorage', e);
                     }
@@ -157,17 +223,12 @@
             });
 
             Livewire.on('alerta', event => {
-                let mensaje = 'Mensaje no definido';
-
-                if (Array.isArray(event) && event.length > 0) {
-                    mensaje = event[0]?.mensaje ?? JSON.stringify(event);
-                } else if (typeof event === 'object') {
-                    mensaje = event.mensaje ?? JSON.stringify(event);
-                } else if (typeof event === 'string') {
-                    mensaje = event;
-                }
-
+                let mensaje = typeof event === 'string' ? event : event?.mensaje ?? 'Mensaje no definido';
                 alert(mensaje);
+            });
+
+            Livewire.on('abrirModalCambio', (equipo) => {
+                @this.call('abrirModalCambio', equipo);
             });
         </script>
     @endpush

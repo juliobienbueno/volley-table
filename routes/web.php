@@ -15,3 +15,8 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+
+Route::get('/partido-real', function () {
+    return view('playingMatch.partido-real');
+})->name('partido-real');
+

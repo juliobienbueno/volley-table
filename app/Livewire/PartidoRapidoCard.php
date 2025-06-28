@@ -3,17 +3,19 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Illuminate\Support\Facades\Session;
 
 class PartidoRapidoCard extends Component
 {
     public $isModalOpen = false;
     public $tabActual = 'partido';
-
     public $form = [];
+    public $posiciones = ['Armador', 'Opuesto', 'Central', 'Libero', 'Punta'];
 
     public function mount()
     {
         $this->resetForm();
+        $this->cargarDatosGuardados(); // Cargar desde localStorage si existe
     }
 
     public function openModal()
@@ -21,22 +23,33 @@ class PartidoRapidoCard extends Component
         $this->isModalOpen = true;
     }
 
-    public function marcarCapitan($jugadoresKey, $index)
-    {
-        if (!isset($this->form[$jugadoresKey])) return;
-
-        foreach ($this->form[$jugadoresKey] as $i => &$jugador) {
-            $jugador['capitan'] = ($i === $index);
-        }
-
-        $this->form[$jugadoresKey] = $this->form[$jugadoresKey]; // Forzar actualización
-    }
-
     public function guardarPartido()
     {
-        // Guardar datos o emitir evento según tu necesidad
+        $this->validate([
+            'form.equipoA' => 'required|string|min:3',
+            'form.equipoB' => 'required|string|min:3',
+            'form.jugadoresA.*.numero' => 'nullable|numeric|min:1|max:99',
+            'form.jugadoresB.*.numero' => 'nullable|numeric|min:1|max:99',
+        ]);
 
+        // Guardar en sesión
+        Session::put('partido_config', $this->form);
+
+        // Emitir evento para Alpine.js/localStorage
+        $this->dispatch('datosGuardados', datos: $this->form);
+
+        // Cerrar modal y resetear
         $this->resetModal();
+
+        // Redirigir o emitir evento según tu flujo
+        return redirect()->route('partido-real');
+    }
+
+    private function cargarDatosGuardados()
+    {
+        if ($datos = Session::get('partido_config')) {
+            $this->form = $datos;
+        }
     }
 
     public function resetModal()
@@ -51,18 +64,22 @@ class PartidoRapidoCard extends Component
         $this->form = [
             'lugar' => '',
             'cancha' => '',
-            'equipoA' => '',
-            'equipoB' => '',
+            'equipoA' => 'Equipo Local',
+            'equipoB' => 'Equipo Visitante',
             'entrenadorA' => '',
             'asistenteA' => '',
             'entrenadorB' => '',
             'asistenteB' => '',
-            'jugadoresA' => array_fill(0, 16, [
-                'nombre' => '', 'numero' => '', 'posicion' => '', 'capitan' => false
-            ]),
-            'jugadoresB' => array_fill(0, 16, [
-                'nombre' => '', 'numero' => '', 'posicion' => '', 'capitan' => false
-            ]),
+            'jugadoresA' => array_map(fn() => [
+                'nombre' => '',
+                'numero' => '',
+                'posicion' => '',
+            ], range(0, 13)),
+            'jugadoresB' => array_map(fn() => [
+                'nombre' => '',
+                'numero' => '',
+                'posicion' => '',
+            ], range(0, 13)),
             'arbitros' => ['', ''],
             'juecesLinea' => ['', '', '', ''],
             'mesa' => ['marcador' => '', 'asistente' => ''],
@@ -71,8 +88,6 @@ class PartidoRapidoCard extends Component
 
     public function render()
     {
-    $posiciones = ['Armador', 'Opuesto', 'Central', 'Libero', 'Punta'];
-    return view('livewire.partido-rapido-card', compact('posiciones'));
+        return view('livewire.partido-rapido-card');
     }
-
 }

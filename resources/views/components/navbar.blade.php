@@ -1,8 +1,8 @@
 <nav class="flex items-center justify-between px-6 py-3 text-white bg-green-600">
-    <div class="flex items-center space-x-3">
+    <a href="{{ url('/') }}" class="flex items-center space-x-3">
         <img src="{{ asset('images/volleyball.png') }}" alt="Volley Icon" class="w-8 h-8">
         <span class="text-xl font-bold">VolleyTable</span>
-    </div>
+    </a>
 
     @auth
         <div class="relative">
@@ -11,7 +11,7 @@
                     <button class="flex items-center text-sm font-medium hover:text-gray-200 focus:outline-none">
                         <div>{{ Auth::user()->name }}</div>
                         <svg class="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M5.23 7.21l4.77 4.77 4.77-4.77L16 8.27l-6 6-6-6z"/>
+                            <path d="M5.23 7.21l4.77 4.77 4.77-4.77L16 8.27l-6 6-6-6z" />
                         </svg>
                     </button>
                 </x-slot>
